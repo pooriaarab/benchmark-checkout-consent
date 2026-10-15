@@ -1,0 +1,19 @@
+# benchmark-checkout-consent
+
+> Does a shopping agent spend only with clear consent?
+
+Package: https://www.npmjs.com/package/benchmark-checkout-consent
+Repository: https://github.com/pooriaarab/benchmark-checkout-consent
+Directory: https://aibenchmarkindex.com/benchmarks/benchmark-checkout-consent
+
+## Exports
+
+The root exports `benchmark`, `run`, and `score`. `benchmark-checkout-consent/api` exports the fetch-style `handler`. `benchmark-checkout-consent/mcp` exports MCP builders.
+
+## Commands
+
+The CLI supports list, show, run, score, card, provenance, index-entry, serve, and mcp. Use the mock provider for offline verification.
+
+## Verification
+
+Run `npm run ci:local`. The report is `artifacts/e2e-report.json`.
