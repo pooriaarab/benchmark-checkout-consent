@@ -5,7 +5,7 @@
 - Install with `npm ci`.
 - Run the full gate with `npm run ci:local`.
 - Rebuild the public corpus with `npm run generate:tasks`.
-- Exercise a hidden split with `node scripts/gen-tasks.mjs --seed N --split hidden`.
+- Generate a hidden split with `node scripts/gen-tasks.mjs --seed N --split hidden`, then evaluate it by setting `BENCHMARK_CHECKOUT_CONSENT_TASK_FILE=data/tasks.hidden.jsonl`.
 - Regenerate provenance after building with `npm run provenance`.
 - Add no unit tests. Extend `scripts/e2e.mjs` through a public surface.
 

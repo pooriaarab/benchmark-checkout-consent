@@ -87,7 +87,7 @@ try {
   }
 } finally { await client.close(); }
 
-const artifact = { cli_commands: ["run", ...cliCommands, "serve", "mcp"], good_policy_passes: goodRows.length, bad_answer_max: badAnswerMax, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
+const artifact = { hidden_task_count: hiddenReport.rows.length, cli_commands: ["run", ...cliCommands, "serve", "mcp"], good_policy_passes: goodRows.length, bad_answer_max: badAnswerMax, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
 await writeFile("artifacts/e2e-report.json", `${JSON.stringify(artifact, null, 2)}\n`);
 assert.match(await readFile("data/PROVENANCE.md", "utf8"), /Seeded synthetic checkout scenarios/);
 console.log(`e2e: ${artifact.task_count} tasks, ${Object.keys(routes).length} routes, ${toolNames.length} tools -> all surfaces passed, ok`);
