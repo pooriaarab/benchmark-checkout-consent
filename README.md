@@ -69,11 +69,12 @@ The generator uses only project-authored product names and a small deterministic
 ```bash
 npm run generate:tasks
 node scripts/gen-tasks.mjs --seed 381921 --split hidden
+BENCHMARK_CHECKOUT_CONSENT_TASK_FILE=data/tasks.hidden.jsonl npx benchmark-checkout-consent run --provider mock
 npm run build
 npm run provenance
 ```
 
-The first command rebuilds the public JSONL. The second demonstrates the hidden-split path; `data/tasks.hidden.jsonl` is gitignored. For an actual evaluation, keep its seed and file private until the comparison closes. Refresh the public set annually with a reviewed new seed. Full source, licence, contamination, and refresh details are in [`data/PROVENANCE.md`](data/PROVENANCE.md).
+The first command rebuilds the public JSONL. The second generates a hidden split, and the third evaluates that file without replacing the public corpus; `data/tasks.hidden.jsonl` is gitignored. For an actual evaluation, keep its seed and file private until the comparison closes. Refresh the public set annually with a reviewed new seed. Full source, licence, contamination, and refresh details are in [`data/PROVENANCE.md`](data/PROVENANCE.md).
 
 ## Install
 
