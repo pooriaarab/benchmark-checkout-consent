@@ -3,7 +3,9 @@ import { defineBenchmark, replay, type JsonValue, type Task } from "benchmark-co
 import { CheckoutEnvironment, expectedFor, goodPolicy } from "./shop.js";
 
 async function loadTasks(): Promise<Task[]> {
-  const text = await readFile(new URL("../data/tasks.jsonl", import.meta.url), "utf8");
+  const override = typeof process === "undefined" ? undefined : process.env.BENCHMARK_CHECKOUT_CONSENT_TASK_FILE;
+  const source = override || new URL("../data/tasks.jsonl", import.meta.url);
+  const text = await readFile(source, "utf8");
   return text.trim().split("\n").map((line) => JSON.parse(line) as Task);
 }
 

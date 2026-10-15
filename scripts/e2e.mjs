@@ -9,6 +9,11 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const execFile = promisify(execFileCallback);
 
 await execFile("npm", ["run", "build"]);
+await execFile(process.execPath, ["scripts/gen-tasks.mjs", "--seed", "381921", "--split", "hidden"]);
+const hiddenCli = await execFile(process.execPath, ["dist/cli.js", "run", "--provider", "mock", "--json"], { env: { ...process.env, BENCHMARK_CHECKOUT_CONSENT_TASK_FILE: "data/tasks.hidden.jsonl" }, maxBuffer: 1_000_000 });
+const hiddenReport = JSON.parse(hiddenCli.stdout);
+assert.equal(hiddenReport.rows.length, 40);
+assert.ok(hiddenReport.rows.every((row) => row.taskId.startsWith("hidden-")));
 const cli = await execFile(process.execPath, ["dist/cli.js", "run", "--provider", "mock", "--json"], { maxBuffer: 1_000_000 });
 const report = JSON.parse(cli.stdout);
 await mkdir("artifacts", { recursive: true });
