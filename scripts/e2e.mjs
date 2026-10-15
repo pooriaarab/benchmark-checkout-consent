@@ -10,12 +10,26 @@ const execFile = promisify(execFileCallback);
 
 await execFile("npm", ["run", "build"]);
 await execFile(process.execPath, ["scripts/gen-tasks.mjs", "--seed", "381921", "--split", "hidden"]);
-const hiddenCli = await execFile(process.execPath, ["dist/cli.js", "run", "--model", "offline", "--provider", "mock", "--json"], { env: { ...process.env, BENCHMARK_CHECKOUT_CONSENT_TASK_FILE: "data/tasks.hidden.jsonl" }, maxBuffer: 1_000_000 });
+const hiddenCli = await execFile(process.execPath, ["dist/cli.js", "run", "--provider", "mock", "--json"], { env: { ...process.env, BENCHMARK_CHECKOUT_CONSENT_TASK_FILE: "data/tasks.hidden.jsonl" }, maxBuffer: 1_000_000 });
 const hiddenReport = JSON.parse(hiddenCli.stdout);
 assert.equal(hiddenReport.rows.length, 40);
 assert.ok(hiddenReport.rows.every((row) => row.taskId.startsWith("hidden-")));
-const cli = await execFile(process.execPath, ["dist/cli.js", "run", "--model", "offline", "--provider", "mock", "--json"], { maxBuffer: 1_000_000 });
+const cli = await execFile(process.execPath, ["dist/cli.js", "run", "--provider", "mock", "--json"], { maxBuffer: 1_000_000 });
 const report = JSON.parse(cli.stdout);
+await mkdir("artifacts", { recursive: true });
+await writeFile("artifacts/mock-report.json", `${JSON.stringify(report)}\n`);
+const cliCommands = [];
+async function runCli(args) {
+  const result = await execFile(process.execPath, ["dist/cli.js", ...args], { maxBuffer: 1_000_000 });
+  cliCommands.push(args[0]); return result.stdout;
+}
+assert.equal(JSON.parse(await runCli(["list", "--json"])).tasks.length, 40);
+assert.equal(JSON.parse(await runCli(["show", "public-01-ambiguous-request", "--json"])).task.id, "public-01-ambiguous-request");
+assert.equal(JSON.parse(await runCli(["score", "artifacts/mock-report.json", "--json"])).rows.length, 40);
+await runCli(["card", "artifacts/mock-report.json", "artifacts/share-card.svg"]);
+assert.match(await readFile("artifacts/share-card.svg", "utf8"), /<svg/);
+assert.equal(JSON.parse(await runCli(["provenance", "--json"])).provenance.length, 1);
+assert.equal(JSON.parse(await runCli(["index-entry", "--json"])).task_count, 40);
 const { benchmark } = await import("../dist/index.js");
 assert.equal(report.rows.length, 40);
 assert.ok(report.rows.some((row) => row.score === 1));
@@ -73,8 +87,7 @@ try {
   }
 } finally { await client.close(); }
 
-const artifact = { good_policy_passes: goodRows.length, bad_answer_max: badAnswerMax, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
-await mkdir("artifacts", { recursive: true });
+const artifact = { hidden_task_count: hiddenReport.rows.length, cli_commands: ["run", ...cliCommands, "serve", "mcp"], good_policy_passes: goodRows.length, bad_answer_max: badAnswerMax, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
 await writeFile("artifacts/e2e-report.json", `${JSON.stringify(artifact, null, 2)}\n`);
 assert.match(await readFile("data/PROVENANCE.md", "utf8"), /Seeded synthetic checkout scenarios/);
 console.log(`e2e: ${artifact.task_count} tasks, ${Object.keys(routes).length} routes, ${toolNames.length} tools -> all surfaces passed, ok`);
