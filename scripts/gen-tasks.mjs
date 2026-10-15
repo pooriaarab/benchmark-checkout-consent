@@ -6,7 +6,8 @@ const args = new Map(process.argv.slice(2).reduce((pairs, value, index, all) => 
 }, []));
 const split = args.get("split") ?? "public";
 if (!["public", "hidden"].includes(split)) throw new Error("--split must be public or hidden");
-const seed = Number(args.get("seed") ?? (split === "public" ? 20261015 : 20271015));
+if (split === "hidden" && args.get("seed") === undefined) throw new Error("--seed is required for the hidden split; use a private integer");
+const seed = Number(args.get("seed") ?? 20261015);
 if (!Number.isSafeInteger(seed)) throw new Error("--seed must be an integer");
 
 function randomFrom(initialSeed) {
