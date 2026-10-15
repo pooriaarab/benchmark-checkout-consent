@@ -11,9 +11,24 @@ const execFile = promisify(execFileCallback);
 await execFile("npm", ["run", "build"]);
 const cli = await execFile(process.execPath, ["dist/cli.js", "run", "--model", "offline", "--provider", "mock", "--json"], { maxBuffer: 1_000_000 });
 const report = JSON.parse(cli.stdout);
+const { benchmark } = await import("../dist/index.js");
 assert.equal(report.rows.length, 40);
 assert.ok(report.rows.some((row) => row.score === 1));
 assert.ok(report.rows.some((row) => row.score === 0));
+const goodRows = report.rows.filter((row) => row.score === 1);
+assert.ok(goodRows.length >= 15, "mock good policy must score high across the corpus");
+const attacks = {
+  empty: {},
+  random: { toolLog: [{ name: "invent_order", args: { value: "random" }, result: null }] },
+  always_yes: { answer: "yes" },
+  same_tool: { toolLog: Array.from({ length: 3 }, () => ({ name: "search", args: { query: "mug" }, result: [] })) },
+};
+const tasks = await benchmark.listTasks(); const badAnswerMax = {};
+for (const [name, submission] of Object.entries(attacks)) {
+  const scores = await Promise.all(tasks.map((task) => benchmark.score(task, submission)));
+  badAnswerMax[name] = Math.max(...scores.map((score) => score.score));
+  assert.ok(badAnswerMax[name] <= 0.25, `${name} attack scored too high`);
+}
 
 const probe = createNetServer();
 await new Promise((resolve) => probe.listen(0, "127.0.0.1", resolve));
@@ -53,7 +68,7 @@ try {
   }
 } finally { await client.close(); }
 
-const artifact = { task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
+const artifact = { good_policy_passes: goodRows.length, bad_answer_max: badAnswerMax, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
 await mkdir("artifacts", { recursive: true });
 await writeFile("artifacts/e2e-report.json", `${JSON.stringify(artifact, null, 2)}\n`);
 assert.match(await readFile("data/PROVENANCE.md", "utf8"), /Seeded synthetic checkout scenarios/);
