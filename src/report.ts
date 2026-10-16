@@ -11,7 +11,21 @@ export interface ReportBreakdown {
 }
 export type ReportWithBreakdown = RunReport & { breakdown?: ReportBreakdown };
 
-type GradeDetails = { scenario?: string; rules?: Record<string, boolean>; asks?: { used?: number; extra?: number } };
+export type GradeDetails = { scenario?: string; rules?: Record<string, boolean>; asks?: { used?: number; needed?: number; extra?: number } };
+
+/** Builds the same breakdown shape as a run report for one already-graded submission. */
+export function gradeBreakdown(details: GradeDetails | undefined, score: number): ReportBreakdown {
+  const rules: Record<string, RuleBreakdown> = Object.create(null);
+  for (const [name, pass] of Object.entries(details?.rules ?? {})) rules[name] = { passed: pass ? 1 : 0, total: 1 };
+  const scenario = details?.scenario ?? "unknown";
+  return {
+    rules,
+    scenarios: { [scenario]: { tasks: 1, mean: score } },
+    asks: { used: details?.asks?.used ?? 0, extra: details?.asks?.extra ?? 0 },
+    scored: 1,
+    unscored: 0,
+  };
+}
 
 /** Re-scores every row submission and attaches per-rule and per-scenario aggregates. */
 export async function attachBreakdown(bench: Benchmark<Task>, report: RunReport): Promise<ReportWithBreakdown> {

@@ -4,6 +4,7 @@ import { parseArgs } from "node:util";
 import { bootstrapCI, createCli, mockAdapter, openaiCompatAdapter, openrouterAdapter, renderMarkdown, run as runBenchmark, serve, type Benchmark, type ModelAdapter, type RunOptions, type RunReport, type Task } from "benchmark-core";
 import { createApiHandler } from "./api.js";
 import { benchmark, benchmarkWithTasks } from "./benchmark.js";
+import { startMcp } from "./mcp.js";
 import { attachBreakdown, breakdownMarkdown, type ReportWithBreakdown } from "./report.js";
 
 class UsageError extends Error {}
@@ -80,6 +81,10 @@ async function main(argv: string[]): Promise<number> {
     if (!hostname.trim()) throw new UsageError("--host must not be empty.");
     await serve(createApiHandler(tasksFile), { port, hostname });
     console.log(jsonOutput ? JSON.stringify({ listening: port, host: hostname }) : `Listening on http://${hostname}:${port}`);
+    return 0;
+  }
+  if (command === "mcp") {
+    await startMcp(tasksFile);
     return 0;
   }
   return createCli(bench, { bin: "benchmark-checkout-consent" }).main(argv);
