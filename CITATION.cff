@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it using the metadata below."
+title: "benchmark-checkout-consent"
+type: software
+authors:
+  - family-names: Arab
+    given-names: Pooria
+version: "0.2.0"
+date-released: 2026-10-16
+license: MIT
+repository-code: https://github.com/pooriaarab/benchmark-checkout-consent
+url: "https://aibenchmarkindex.com/benchmarks/benchmark-checkout-consent"
+abstract: "Benchmark shopping agents for explicit checkout consent, exact totals, spend caps, and safe payment tool use."
+keywords:
+  - ai-benchmark
+  - llm-evaluation
+  - agent-evaluation
+  - deterministic-grader
