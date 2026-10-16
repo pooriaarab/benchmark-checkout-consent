@@ -67,7 +67,7 @@ npm run build
 npm run provenance
 ```
 
-The first command rebuilds the public JSONL. The second generates a hidden split, and the third evaluates that file without replacing the public corpus; `hidden/tasks.hidden.jsonl` is gitignored. `--tasks` works on `list`, `show`, `run`, `score` and `serve`; the SDK accepts `run(adapter, { tasks: "path.jsonl" })` and the API accepts `?tasks=` or a `tasks` field in the score body. `BENCHMARK_CHECKOUT_CONSENT_TASK_FILE` still works as a default override. For an actual evaluation, keep its seed and file private until the comparison closes. Refresh the public set annually with a reviewed new seed. Full source, licence, contamination, and refresh details are in [`data/PROVENANCE.md`](data/PROVENANCE.md).
+The first command rebuilds the public JSONL. The second generates a hidden split, and the third evaluates that file without replacing the public corpus; `hidden/tasks.hidden.jsonl` is gitignored. `--tasks` works on `list`, `show`, `run`, `score` and `serve`; the SDK accepts `run(adapter, { tasks: "path.jsonl" })` and the API serves an alternate split through `serve --tasks <path>` (or `createApiHandler(tasksFile)`). `BENCHMARK_CHECKOUT_CONSENT_TASK_FILE` still works as a default override. For an actual evaluation, keep its seed and file private until the comparison closes. Refresh the public set annually with a reviewed new seed. Full source, licence, contamination, and refresh details are in [`data/PROVENANCE.md`](data/PROVENANCE.md).
 
 ## Install
 
