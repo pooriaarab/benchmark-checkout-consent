@@ -10,7 +10,7 @@ const execFile = promisify(execFileCallback);
 
 await execFile("npm", ["run", "build"]);
 await execFile(process.execPath, ["scripts/gen-tasks.mjs", "--seed", "381921", "--split", "hidden"]);
-const hiddenCli = await execFile(process.execPath, ["dist/cli.js", "run", "--provider", "mock", "--json"], { env: { ...process.env, BENCHMARK_CHECKOUT_CONSENT_TASK_FILE: "hidden/tasks.hidden.jsonl" }, maxBuffer: 1_000_000 });
+const hiddenCli = await execFile(process.execPath, ["dist/cli.js", "run", "--provider", "mock", "--tasks", "hidden/tasks.hidden.jsonl", "--json"], { maxBuffer: 1_000_000 });
 const hiddenReport = JSON.parse(hiddenCli.stdout);
 assert.equal(hiddenReport.rows.length, 40);
 assert.ok(hiddenReport.rows.every((row) => row.taskId.startsWith("hidden-")));
@@ -24,14 +24,28 @@ async function runCli(args) {
   cliCommands.push(args[0]); return result.stdout;
 }
 assert.equal(JSON.parse(await runCli(["list", "--json"])).tasks.length, 40);
+const hiddenList = JSON.parse(await runCli(["list", "--tasks", "hidden/tasks.hidden.jsonl", "--json"]));
+assert.equal(hiddenList.tasks.length, 40);
+assert.ok(hiddenList.tasks[0].id.startsWith("hidden-"));
+const textRun = await runCli(["run", "--provider", "mock"]);
+assert.match(textRun, /## Breakdown/);
+assert.match(textRun, /\| outcome \|/);
 assert.equal(JSON.parse(await runCli(["show", "public-01-ambiguous-request", "--json"])).task.id, "public-01-ambiguous-request");
-assert.equal(JSON.parse(await runCli(["score", "artifacts/mock-report.json", "--json"])).rows.length, 40);
+const rescored = JSON.parse(await runCli(["score", "artifacts/mock-report.json", "--json"]));
+assert.equal(rescored.rows.length, 40);
+assert.ok(rescored.breakdown?.rules?.outcome, "score report must expose the rule breakdown");
 await runCli(["card", "artifacts/mock-report.json", "artifacts/share-card.svg"]);
 assert.match(await readFile("artifacts/share-card.svg", "utf8"), /<svg/);
 assert.equal(JSON.parse(await runCli(["provenance", "--json"])).provenance.length, 1);
 assert.equal(JSON.parse(await runCli(["index-entry", "--json"])).task_count, 40);
-const { benchmark, goodPolicy } = await import("../dist/index.js");
+const { benchmark, goodPolicy, run: sdkRun } = await import("../dist/index.js");
+const { mockAdapter } = await import("benchmark-core");
+const sdkHidden = await sdkRun(mockAdapter({ policies: benchmark.definition.mockPolicies }), { tasks: "hidden/tasks.hidden.jsonl" });
+assert.equal(sdkHidden.rows.length, 40);
+assert.ok(sdkHidden.rows.every((row) => row.taskId.startsWith("hidden-")));
 assert.equal(report.rows.length, 40);
+assert.ok(report.breakdown?.rules?.outcome, "run report must expose the rule breakdown");
+assert.equal(Object.keys(report.breakdown.scenarios).length, 7);
 assert.ok(report.rows.some((row) => row.score === 1));
 assert.ok(report.rows.some((row) => row.score === 0));
 const goodRows = report.rows.filter((row) => row.score === 1);
@@ -77,9 +91,14 @@ try {
   for (let attempt = 0; attempt < 100; attempt++) { try { await get("/health"); break; } catch { await new Promise((resolve) => setTimeout(resolve, 20)); } }
   const health = await get("/health"); assert.equal(health.response.status, 200);
   const listed = await get("/v1/tasks"); assert.equal(listed.value.tasks.length, 40);
+  const hiddenListed = await get("/v1/tasks?tasks=hidden/tasks.hidden.jsonl");
+  assert.equal(hiddenListed.value.tasks.length, 40);
+  assert.ok(hiddenListed.value.tasks[0].id.startsWith("hidden-"));
   const shown = await get("/v1/tasks/public-01-ambiguous-request"); assert.equal(shown.value.task.id, "public-01-ambiguous-request");
   const score = await fetch(`${base}/v1/score`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ taskId: "public-01-ambiguous-request", submission: report.rows[0].submission }) });
   routes["POST /v1/score"] = score.status; assert.equal(score.status, 200);
+  const hiddenScore = await fetch(`${base}/v1/score`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tasks: "hidden/tasks.hidden.jsonl", taskId: hiddenReport.rows[0].taskId, submission: hiddenReport.rows[0].submission }) });
+  routes["POST /v1/score tasks"] = hiddenScore.status; assert.equal(hiddenScore.status, 200);
   assert.equal((await get("/v1/provenance")).response.status, 200);
   assert.equal((await get("/v1/index-entry")).value.task_count, 40);
 } finally { if (server.exitCode === null) { server.kill("SIGTERM"); await once(server, "exit"); } }
