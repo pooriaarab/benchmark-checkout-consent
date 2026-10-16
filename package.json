@@ -1,6 +1,6 @@
 {
   "name": "benchmark-checkout-consent",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Benchmark shopping agents for explicit checkout consent, exact totals, spend caps, and safe payment tool use.",
   "keywords": [
     "ai-benchmark",

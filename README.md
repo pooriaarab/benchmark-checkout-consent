@@ -147,7 +147,7 @@ The single E2E gate builds the package, runs all 40 tasks, attacks the grader wi
 
 ## Status
 
-Version `0.1.0` is alpha. Task and trace schemas may change before 1.0. Report defects through [GitHub issues](https://github.com/pooriaarab/benchmark-checkout-consent/issues).
+Version `0.2.0` is alpha. Task and trace schemas may change before 1.0. Report defects through [GitHub issues](https://github.com/pooriaarab/benchmark-checkout-consent/issues).
 
 ## License
 
