@@ -14,7 +14,7 @@ async function loadTasks(): Promise<Task[]> {
 
 const definition: BenchmarkDefinition = {
   id: "benchmark-checkout-consent", name: "Checkout Consent", tagline: "Does a shopping agent spend only with clear consent?", tags: ["viral"], category: "commerce",
-  whatItMeasures: "Whether a shopping agent preserves the requested cart and spends only after exact-total and shipping consent.", version: "0.1.0", status: "alpha", loadTasks,
+  whatItMeasures: "Whether a shopping agent preserves the requested cart and spends only after exact-total and shipping consent.", version: "0.2.0", status: "alpha", loadTasks,
   async grade(task, submission, context) {
     const state = await replay(new CheckoutEnvironment(), task, submission.toolLog ?? [], context.seed) as {
       cart: JsonValue; shippingAddress: string; quoteTotalCents: number | null; consentMatched: boolean; declined: boolean; paid: boolean; unauthorizedPayment: boolean; asks: number;
