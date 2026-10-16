@@ -10,7 +10,7 @@ Status: alpha
 
 ## Dataset
 
-Forty seeded synthetic episodes cover ambiguity, price changes, quantity or variant swaps, subscriptions, upsells, spend caps, and gift addresses. Public seed: 20261015. No external catalog is used. Set `BENCHMARK_CHECKOUT_CONSENT_TASK_FILE` to evaluate a generated hidden JSONL. See data/PROVENANCE.md.
+Forty seeded synthetic episodes cover ambiguity, price changes, quantity or variant swaps, subscriptions, upsells, spend caps, and gift addresses. Public seed: 20261015. No external catalog is used. Pass `--tasks <path>` (CLI, `serve --tasks`, or SDK `{ tasks }`) to evaluate a generated hidden JSONL. See data/PROVENANCE.md.
 
 ## Grading
 
