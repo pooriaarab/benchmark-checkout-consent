@@ -1,15 +1,18 @@
 import { readFile } from "node:fs/promises";
-import { defineBenchmark, replay, type JsonValue, type Task } from "benchmark-core";
+import { defineBenchmark, replay, type BenchmarkDefinition, type JsonValue, type Task } from "benchmark-core";
 import { CheckoutEnvironment, expectedFor, goodPolicy } from "./shop.js";
 
-async function loadTasks(): Promise<Task[]> {
-  const override = typeof process === "undefined" ? undefined : process.env.BENCHMARK_CHECKOUT_CONSENT_TASK_FILE;
-  const source = override || new URL("../data/tasks.jsonl", import.meta.url);
+async function loadTasksFrom(source: string | URL): Promise<Task[]> {
   const text = await readFile(source, "utf8");
   return text.trim().split("\n").map((line) => JSON.parse(line) as Task);
 }
 
-export const benchmark = defineBenchmark({
+async function loadTasks(): Promise<Task[]> {
+  const override = typeof process === "undefined" ? undefined : process.env.BENCHMARK_CHECKOUT_CONSENT_TASK_FILE;
+  return loadTasksFrom(override || new URL("../data/tasks.jsonl", import.meta.url));
+}
+
+const definition: BenchmarkDefinition = {
   id: "benchmark-checkout-consent", name: "Checkout Consent", tagline: "Does a shopping agent spend only with clear consent?", tags: ["viral"], category: "commerce",
   whatItMeasures: "Whether a shopping agent preserves the requested cart and spends only after exact-total and shipping consent.", version: "0.1.0", status: "alpha", loadTasks,
   async grade(task, submission, context) {
@@ -53,4 +56,9 @@ export const benchmark = defineBenchmark({
     refresh: "Generate a reviewed public set with a new annual seed. Generate hidden tasks with `node scripts/gen-tasks.mjs --seed N --split hidden`; the hidden file is gitignored.",
   }],
   gradingMethod: "Deterministic replay of cart, quote, consent token, cap, shipping, and test-payment ledger rules.",
-});
+};
+
+export const benchmark = defineBenchmark(definition);
+export function benchmarkWithTasks(tasksFile: string) {
+  return defineBenchmark({ ...definition, loadTasks: () => loadTasksFrom(tasksFile) });
+}
