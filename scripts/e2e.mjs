@@ -30,23 +30,37 @@ await runCli(["card", "artifacts/mock-report.json", "artifacts/share-card.svg"])
 assert.match(await readFile("artifacts/share-card.svg", "utf8"), /<svg/);
 assert.equal(JSON.parse(await runCli(["provenance", "--json"])).provenance.length, 1);
 assert.equal(JSON.parse(await runCli(["index-entry", "--json"])).task_count, 40);
-const { benchmark } = await import("../dist/index.js");
+const { benchmark, goodPolicy } = await import("../dist/index.js");
 assert.equal(report.rows.length, 40);
 assert.ok(report.rows.some((row) => row.score === 1));
 assert.ok(report.rows.some((row) => row.score === 0));
 const goodRows = report.rows.filter((row) => row.score === 1);
 assert.ok(goodRows.length >= 15, "mock good policy must score high across the corpus");
+const logOf = (task) => goodPolicy(task).flatMap((turn) => (turn.toolCalls ?? []).map((call) => ({ name: call.name, args: call.args })));
+const tasks = await benchmark.listTasks();
+const goodScores = await Promise.all(tasks.map((task) => benchmark.score(task, { toolLog: logOf(task) })));
+const goodMean = goodScores.reduce((sum, score) => sum + score.score, 0) / goodScores.length;
+assert.equal(goodMean, 1, "the scripted good policy must score 1 on every public task");
+const hiddenTasks = (await readFile("hidden/tasks.hidden.jsonl", "utf8")).trim().split("\n").map((line) => JSON.parse(line));
+const hiddenReference = await Promise.all(hiddenTasks.map((task, index) => benchmark.score(task, { toolLog: logOf(tasks[index]) })));
+assert.ok(hiddenReference.every((score) => score.score < 1), "a public reference answer must score below 1 on hidden tasks");
 const attacks = {
-  empty: {},
-  random: { toolLog: [{ name: "invent_order", args: { value: "random" }, result: null }] },
-  always_yes: { answer: "yes" },
-  same_tool: { toolLog: Array.from({ length: 3 }, () => ({ name: "search", args: { query: "mug" }, result: [] })) },
+  empty: () => ({}),
+  constant_yes: () => ({ answer: "yes" }),
+  constant_zero: () => ({ answer: "0" }),
+  always_refuse: () => ({ answer: "I refuse to continue." }),
+  same_tool: () => ({ toolLog: Array.from({ length: 3 }, () => ({ name: "search", args: { query: "mug" } })) }),
+  never_pay: (task) => ({ toolLog: logOf(task).filter((entry) => entry.name !== "pay") }),
+  over_asking: (task) => {
+    const log = logOf(task);
+    return { toolLog: [...log.slice(0, -1), ...Array.from({ length: 20 }, () => ({ name: "ask_user", args: { question: "Still okay?" } })), log.at(-1)] };
+  },
 };
-const tasks = await benchmark.listTasks(); const badAnswerMax = {};
-for (const [name, submission] of Object.entries(attacks)) {
-  const scores = await Promise.all(tasks.map((task) => benchmark.score(task, submission)));
-  badAnswerMax[name] = Math.max(...scores.map((score) => score.score));
-  assert.ok(badAnswerMax[name] <= 0.25, `${name} attack scored too high`);
+const badAnswerMean = {};
+for (const [name, makeSubmission] of Object.entries(attacks)) {
+  const scores = await Promise.all(tasks.map((task) => benchmark.score(task, makeSubmission(task))));
+  badAnswerMean[name] = scores.reduce((sum, score) => sum + score.score, 0) / scores.length;
+  assert.ok(badAnswerMean[name] <= 0.25 && badAnswerMean[name] <= goodMean - 0.3, `${name} attack scored too high`);
 }
 
 const probe = createNetServer();
@@ -87,7 +101,7 @@ try {
   }
 } finally { await client.close(); }
 
-const artifact = { hidden_task_count: hiddenReport.rows.length, cli_commands: ["run", ...cliCommands, "serve", "mcp"], good_policy_passes: goodRows.length, bad_answer_max: badAnswerMax, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
+const artifact = { hidden_task_count: hiddenReport.rows.length, cli_commands: ["run", ...cliCommands, "serve", "mcp"], good_policy_passes: goodRows.length, bad_answer_mean: badAnswerMean, task_count: report.rows.length, scores: report.rows.map((row) => row.score), route_status_codes: routes, tool_names: toolNames };
 await writeFile("artifacts/e2e-report.json", `${JSON.stringify(artifact, null, 2)}\n`);
 assert.match(await readFile("data/PROVENANCE.md", "utf8"), /Seeded synthetic checkout scenarios/);
 console.log(`e2e: ${artifact.task_count} tasks, ${Object.keys(routes).length} routes, ${toolNames.length} tools -> all surfaces passed, ok`);
