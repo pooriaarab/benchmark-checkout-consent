@@ -77,12 +77,18 @@ for (const [name, makeSubmission] of Object.entries(attacks)) {
   assert.ok(badAnswerMean[name] <= 0.25 && badAnswerMean[name] <= goodMean - 0.3, `${name} attack scored too high`);
 }
 
-const probe = createNetServer();
-await new Promise((resolve) => probe.listen(0, "127.0.0.1", resolve));
-const address = probe.address(); assert.ok(address && typeof address === "object");
-await new Promise((resolve) => probe.close(resolve));
-const server = spawn(process.execPath, ["dist/cli.js", "serve", String(address.port)], { stdio: ["ignore", "pipe", "pipe"] });
-const base = `http://127.0.0.1:${address.port}`; const routes = {};
+async function freePort() {
+  const probe = createNetServer();
+  await new Promise((resolve) => probe.listen(0, "127.0.0.1", resolve));
+  const address = probe.address(); assert.ok(address && typeof address === "object");
+  await new Promise((resolve) => probe.close(resolve));
+  return address.port;
+}
+const serverPort = await freePort();
+const hiddenPort = await freePort();
+const server = spawn(process.execPath, ["dist/cli.js", "serve", String(serverPort)], { stdio: ["ignore", "pipe", "pipe"] });
+const hiddenServer = spawn(process.execPath, ["dist/cli.js", "serve", String(hiddenPort), "--tasks", "hidden/tasks.hidden.jsonl"], { stdio: ["ignore", "pipe", "pipe"] });
+const base = `http://127.0.0.1:${serverPort}`; const hiddenBase = `http://127.0.0.1:${hiddenPort}`; const routes = {};
 async function get(path) {
   const response = await fetch(`${base}${path}`); routes[`GET ${path}`] = response.status;
   return { response, value: await response.json() };
@@ -91,17 +97,23 @@ try {
   for (let attempt = 0; attempt < 100; attempt++) { try { await get("/health"); break; } catch { await new Promise((resolve) => setTimeout(resolve, 20)); } }
   const health = await get("/health"); assert.equal(health.response.status, 200);
   const listed = await get("/v1/tasks"); assert.equal(listed.value.tasks.length, 40);
-  const hiddenListed = await get("/v1/tasks?tasks=hidden/tasks.hidden.jsonl");
-  assert.equal(hiddenListed.value.tasks.length, 40);
-  assert.ok(hiddenListed.value.tasks[0].id.startsWith("hidden-"));
   const shown = await get("/v1/tasks/public-01-ambiguous-request"); assert.equal(shown.value.task.id, "public-01-ambiguous-request");
   const score = await fetch(`${base}/v1/score`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ taskId: "public-01-ambiguous-request", submission: report.rows[0].submission }) });
   routes["POST /v1/score"] = score.status; assert.equal(score.status, 200);
-  const hiddenScore = await fetch(`${base}/v1/score`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tasks: "hidden/tasks.hidden.jsonl", taskId: hiddenReport.rows[0].taskId, submission: hiddenReport.rows[0].submission }) });
-  routes["POST /v1/score tasks"] = hiddenScore.status; assert.equal(hiddenScore.status, 200);
   assert.equal((await get("/v1/provenance")).response.status, 200);
   assert.equal((await get("/v1/index-entry")).value.task_count, 40);
-} finally { if (server.exitCode === null) { server.kill("SIGTERM"); await once(server, "exit"); } }
+  let hiddenReady = false;
+  for (let attempt = 0; attempt < 100 && !hiddenReady; attempt++) { try { hiddenReady = (await fetch(`${hiddenBase}/health`)).status === 200; } catch { await new Promise((resolve) => setTimeout(resolve, 20)); } }
+  assert.ok(hiddenReady);
+  const hiddenListed = await (await fetch(`${hiddenBase}/v1/tasks`)).json();
+  assert.equal(hiddenListed.tasks.length, 40);
+  assert.ok(hiddenListed.tasks[0].id.startsWith("hidden-"));
+  routes["GET /v1/tasks (serve --tasks)"] = 200;
+  const hiddenScore = await fetch(`${hiddenBase}/v1/score`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ taskId: hiddenReport.rows[0].taskId, submission: hiddenReport.rows[0].submission }) });
+  routes["POST /v1/score (serve --tasks)"] = hiddenScore.status; assert.equal(hiddenScore.status, 200);
+} finally {
+  for (const child of [server, hiddenServer]) if (child.exitCode === null) { child.kill("SIGTERM"); await once(child, "exit"); }
+}
 
 const transport = new StdioClientTransport({ command: process.execPath, args: ["dist/cli.js", "mcp"], cwd: process.cwd(), stderr: "pipe" });
 const client = new Client({ name: "benchmark-checkout-consent-e2e", version: "0.1.0" });
