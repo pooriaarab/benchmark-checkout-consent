@@ -15,8 +15,8 @@ type GradeDetails = { scenario?: string; rules?: Record<string, boolean>; asks?:
 
 /** Re-scores every row submission and attaches per-rule and per-scenario aggregates. */
 export async function attachBreakdown(bench: Benchmark<Task>, report: RunReport): Promise<ReportWithBreakdown> {
-  const rules: Record<string, RuleBreakdown> = {};
-  const scenarios: Record<string, { tasks: number; score: number }> = {};
+  const rules: Record<string, RuleBreakdown> = Object.create(null);
+  const scenarios: Record<string, { tasks: number; score: number }> = Object.create(null);
   const asks = { used: 0, extra: 0 };
   let scored = 0;
   for (const row of report.rows) {
