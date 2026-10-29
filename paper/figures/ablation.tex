@@ -1,0 +1,6 @@
+\begin{figure}[ht]\centering
+\begin{tikzpicture}\begin{axis}[xlabel={Simulated oracle selection probability},ylabel={Simulated paired score loss},ymin=0,ymax=1]
+\addplot[okblue,mark=square*,error bars/.cd,y dir=both,y explicit] table[x=q,y=difference,y error minus=lo,y error plus=hi,col sep=comma]{data/ablation.generated.csv};
+\end{axis}\end{tikzpicture}
+\caption{Removing consent questions has a simulated null effect when no oracle trace is selected. Paired differences preserve each simulated agent's task choices. Bars are \CILevel\% bootstrap intervals over \Agents{} simulated agents.}\label{fig:ablation}
+\end{figure}

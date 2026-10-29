@@ -1,0 +1,27 @@
+\newcommand{\AskPenalty}{0.05}
+\newcommand{\PaperTitle}{Checkout Consent: Measuring Authorization Before Agent Payments}
+\newcommand{\PaperAbstract}{Checkout consent binds a proposed purchase to a current total and shipping address. Checkout Consent evaluates this boundary in 40 synthetic shopping episodes across 7 scenario types. We test 9 scripted controls through the public execution and replay path. The privileged oracle attains full credit on 40/40 tasks, a rate of 1.000 [0.912, 1.000]. Empty output and blanket refusal receive no credit. Re-quoting after consent produces an unauthorized-attempt rate of 0.875 [0.739, 0.945]. These are 95\% Wilson intervals over tasks. A simulated population sweep adds 16000 episodes and removes consent questions in a paired intervention. At equal oracle and unsafe-policy mixture weights, simulated mean score falls from 0.514 [0.491, 0.536] to 0.062 [0.055, 0.069]; intervals bootstrap simulated agents. The payment guard remains active throughout. Results validate selected measurement distinctions, not deployed agent safety. No learned model or human participant is evaluated.}
+\newcommand{\AuthorOrcid}{https://orcid.org/0009-0005-9964-6841}
+\newcommand{\TaskCount}{40}
+\newcommand{\PayCount}{35}
+\newcommand{\DeclineCount}{5}
+\newcommand{\ScenarioCount}{7}
+\newcommand{\ControlCount}{9}
+\newcommand{\ControlEpisodes}{720}
+\newcommand{\SimEpisodes}{16000}
+\newcommand{\Agents}{40}
+\newcommand{\CILevel}{95}
+\newcommand{\Draws}{2000}
+\newcommand{\OracleFull}{1.000 [0.912, 1.000]}
+\newcommand{\EmptyFull}{0.000 [0.000, 0.088]}
+\newcommand{\BadAttempts}{1.000 [0.912, 1.000]}
+\newcommand{\StaleAttempts}{0.875 [0.739, 0.945]}
+\newcommand{\ExtraScore}{0.956 [0.956, 0.956]}
+\newcommand{\ExtraDifference}{-0.044 [-0.044, -0.044]}
+\newcommand{\StaleScore}{0.125 [0.125, 0.125]}
+\newcommand{\StaleDifference}{-0.875 [-0.875, -0.875]}
+\newcommand{\MidIntact}{0.514 [0.491, 0.536]}
+\newcommand{\MidRemoved}{0.062 [0.055, 0.069]}
+\newcommand{\MidDifference}{0.452 [0.431, 0.473]}
+\newcommand{\SimNull}{0.000 [0.000, 0.000]}
+\newcommand{\EndDifference}{0.875 [0.875, 0.875]}

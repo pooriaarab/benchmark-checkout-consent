@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "title": "Checkout Consent: Measuring Authorization Before Agent Payments",
+  "abstract": "Checkout consent binds a proposed purchase to a current total and shipping address. Checkout Consent evaluates this boundary in 40 synthetic shopping episodes across 7 scenario types. We test 9 scripted controls through the public execution and replay path. The privileged oracle attains full credit on 40/40 tasks, a rate of 1.000 [0.912, 1.000]. Empty output and blanket refusal receive no credit. Re-quoting after consent produces an unauthorized-attempt rate of 0.875 [0.739, 0.945]. These are 95% Wilson intervals over tasks. A simulated population sweep adds 16000 episodes and removes consent questions in a paired intervention. At equal oracle and unsafe-policy mixture weights, simulated mean score falls from 0.514 [0.491, 0.536] to 0.062 [0.055, 0.069]; intervals bootstrap simulated agents. The payment guard remains active throughout. Results validate selected measurement distinctions, not deployed agent safety. No learned model or human participant is evaluated.",
+  "authors": [
+    {
+      "name": "Pooria Arab",
+      "affiliation": "Independent researcher",
+      "orcid": "https://orcid.org/0009-0005-9964-6841"
+    }
+  ],
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "agent evaluation",
+    "checkout consent",
+    "payment authorization",
+    "simulated controls"
+  ],
+  "code_url": "https://github.com/pooriaarab/benchmark-checkout-consent",
+  "artifact_name": "checkout-consent-paper.pdf"
+}

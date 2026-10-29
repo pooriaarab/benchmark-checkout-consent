@@ -4,3 +4,9 @@ artifacts/
 *.tgz
 
 hidden/
+
+paper/*.pdf
+paper/*.log
+paper/*.blg
+paper/*.sty
+paper/.style.zip
