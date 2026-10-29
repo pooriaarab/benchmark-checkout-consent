@@ -1,0 +1,6 @@
+\begin{figure}[ht]\centering
+\begin{tikzpicture}\begin{axis}[ybar,ymin=0,ylabel={Task count},xtick={0,1,2,3,4,5,6},xticklabels={Ambiguity,Price,Swap,Subscription,Upsell,Cap,Gift},x tick label style={rotate=25,anchor=east},nodes near coords]
+\addplot[fill=okblue] table[x=id,y=count,col sep=comma]{data/coverage.generated.csv};
+\end{axis}\end{tikzpicture}
+\caption{Coverage is spread across scenario types, with no matched harmless twin for each task. Counts describe the entire fixed corpus of \TaskCount{} episodes, not a sample estimate.}\label{fig:coverage}
+\end{figure}

@@ -1,0 +1,142 @@
+\documentclass{article}
+\input{template/layout.tex}
+\input{generated/macros.tex}
+\title{\PaperTitle}
+\author{Pooria Arab\\Independent researcher\\\url{\AuthorOrcid}}
+\begin{document}
+\maketitle
+\begin{abstract}\PaperAbstract\end{abstract}
+\section{Why checkout consent matters}
+A shopping request gives an agent a goal, but it does not settle every decision before payment. The requested item can change during checkout. Shipping can change the total. A store can offer a subscription or replace a variant. The agent must preserve the request while checking that the user approves the current purchase. A successful search or plausible final message does not establish that approval.
+
+Checkout Consent measures whether an agent completes a synthetic order only with current consent for the intended cart, total, and address. It also checks whether the agent stops when the requested order exceeds the spending cap. The unit of evaluation is a complete tool-use episode. The evidence is the sequence of actions and the resulting ledger, rather than the agent's account of its own conduct.
+
+This distinction supports a narrow scientific claim. A benchmark can separate useful completion, justified decline, and attempted unauthorized payment even when the payment tool blocks unsafe requests. The controls in this paper test that separation. They do not show that a learned agent understands consent or that a deployed payment service is safe. The oracle has access to the expected answer and serves as a measurement control.
+
+The study makes three contributions. It defines the consent boundary as a state-dependent relation between a request and a checkout. It tests selected scorer properties with contrasting scripts. It adds a labelled simulated population experiment that removes consent questions while preserving the payment guard. The simulated experiment examines how the measurement responds to a controlled intervention; it does not estimate the effect of removing safeguards from a real model.
+\section{Related work}
+PayBench proposes commercial tasks with unsafe cases and safe lookalikes, and reports unsafe action alongside needless refusal \citep{paybench}. That framing motivates separate attention to action and restraint here. Our public corpus does not contain a matched harmless twin for every trap. We therefore do not claim to estimate a matched safety-autonomy frontier. Its contribution is a smaller, executable checkout protocol with trace-based scoring.
+
+The distinction matters for interpretation. A score from matched cases can show whether a system responds differently to the feature that changes authorization. Our scenario categories show behavior on selected checkout mechanisms. Their differences also contain changes in wording, item, address, and expected outcome. Cross-category score gaps cannot isolate the causal effect of a single commercial risk.
+
+The task and user interactions in $\tau$-bench combine tools, policy rules, and conversations, then evaluate the resulting state \citep{tau}. Checkout Consent uses a scripted user and a restricted purchase process. This removes variation from a learned user simulator, but narrows the language and negotiation behaviors under study. A repeated scripted run checks determinism; it is not a reliability estimate for a stochastic language model.
+
+WebArena evaluates agents in functional web environments, including shopping contexts \citep{webarena}. The present setting excludes browser navigation, visual interpretation, account access, and merchant discovery. That restriction helps locate a failure at the consent boundary. It also means these results cannot predict a browser agent's end-to-end shopping ability. A future combined evaluation should retain both the broader task result and the narrower consent evidence.
+\section{Experiment design}
+\subsection{Construct and observation}
+The target construct is compliance with explicit checkout authorization while preserving the user's purchase constraints. We observe a cart, a shipping address, a quoted total, consent acquisition, and a payment attempt. Consent is current only when the environment accepts the question and issues a token for the present state. A quote gives information; it does not grant permission.
+
+The environment stores a test ledger and exposes catalog search, cart replacement, address setting, quotation, a scripted user question, and payment. The payment rail is in memory. No purchase, transfer, account charge, or external merchant request occurs. This provides action evidence without exposing a user to monetary loss. It cannot measure operational settlement, fraud controls, refunds, or charge disputes.
+
+The user question must include the quoted total and full shipping address. The environment also compares the current cart and address with the intended values. It refuses a mismatch and can first return a clarification or substitution correction. These responses are fixed by the task. The oracle's successful path therefore checks a known contract, rather than discovering an unknown user preference.
+
+Setting the cart or address invalidates the quote and token. Getting a quote also invalidates a previous token, even when the numeric total remains unchanged. Paying consumes a valid token. A failed payment attempt records an unauthorized action and ends the episode. The scorer later reconstructs the ledger from the submitted tool calls, so a claimed final state cannot replace action evidence.
+\subsection{Corpus and scope}
+The study uses the complete public corpus: \TaskCount{} episodes across \ScenarioCount{} scenario types. Of these, \PayCount{} require a consent-backed purchase and \DeclineCount{} require stopping for an over-cap quote. Every order is synthetic. Product identity, variants, prices, quantities, addresses, and shipping costs vary within a small generated domain. The corpus supports controlled checks of these mechanisms, not a prevalence estimate for real shopping hazards.
+
+The task generator assigns an intended cart and address before evaluation. It computes the final total from checkout price, quantity, and shipping. A spend-cap scenario sets the cap below that total. Other cases permit the intended purchase after consent. The public task seed and expected states are available, so performance on this corpus cannot establish generalization to unseen requests.
+
+We use the existing corpus without editing tasks after observing results. The design is prospective for this run but not blind to source code. Source inspection and existing verification assertions already suggest an oracle ceiling. That knowledge is recorded in the study plan. The plan is committed before output collection; it is not registered with an independent registry.
+\subsection{Controls and execution}
+The \ControlCount{} scripted controls include a privileged oracle, empty output, constant output, prompt echo, refusal, a single search, immediate unsafe payment, an extra question, and stale consent. The oracle constructs the intended trace using expected task fields. It is useful for checking reachability and scoring. Its result must not appear in a model leaderboard or be described as autonomous reasoning.
+
+Empty, constant, echo, and refusal controls produce no tool calls. Search-only requests the catalog and stops. These controls test whether text or harmless activity receives unearned completion credit. Immediate unsafe payment supplies a token without acquiring consent. This control tests whether the ledger records an attempt even though the tool rejects it.
+
+The extra-question control follows the oracle and inserts an unnecessary question before payment. On decline tasks, it schedules the extra question after the final consent interaction. The environment ends at the decline, so that extra action never executes. This difference is part of the declared intervention and explains the unchanged decline outcomes. We do not count a scheduled action as an observed action.
+
+The stale-consent control follows the oracle, then requests a new quote before attempting payment with the old token. It changes no item or address and does not ask again. This tests whether consent freshness is enforced independently of visible price movement. Decline tasks have no payment step and retain their original trace.
+
+Every control runs twice under the same settings. We preserve reports, outputs, and tool transcripts. Repeat checks compare semantic traces and scores, excluding elapsed time. Repeats diagnose reproducibility and do not double the task sample size. Each run uses a zero-cost local adapter through the same public execution and replay path that accepts model adapters.
+\section{Coverage and failure taxonomy}
+\input{figures/coverage.tex}
+Ambiguous requests omit enough detail to require clarification. The user reply supplies the specific variant, address, and spending limit. The evaluation checks the resulting cart rather than rewarding the mere presence of a question. A system that asks a generic question and then ignores the answer should not receive credit for clarification alone.
+
+Price-change tasks distinguish a listing price from the current checkout price. Consent must name the current quote, including shipping. This tests the boundary between an earlier description and a later authorization. It does not test open-ended price negotiation or a user's willingness to accept an unexpected increase. The scripted user has a fixed intended outcome within the cap.
+
+Quantity and variant substitution tasks return a shop-selected alternative on the first cart operation. A correction directs the agent to preserve the request. Subscription tasks expose a recurring purchase option while requesting a one-time order. Upsell tasks expose an upgrade offer at quotation. Together these cases test whether available actions are mistaken for user instructions.
+
+Gift-address tasks place the recipient address beside the user's own address. They test which address controls checkout, not whether an address belongs to a real person. Spend-cap tasks require a quote for the intended cart and no payment. A lower-priced substitute does not automatically satisfy the original request. The correct action is to stop at the stated constraint.
+
+We separate failures by the evidence that establishes them. An unauthorized attempt is a call to payment without a current matching token. An outcome failure is a missing consent-backed purchase or missing valid decline. A cart failure changes item, variant, quantity, or purchase type. An address failure ships elsewhere. An interaction-cost failure asks beyond the task allowance. These categories overlap and are not a partition of observed model errors.
+
+The paper does not estimate category frequencies in deployed agents. The named controls deliberately trigger selected mechanisms. Their frequencies depend on the corpus design and the script, not on naturally occurring behavior. The taxonomy is an interpretation aid for future evaluation, with counts drawn from actual traces when a tested condition instantiates a category.
+\section{Metrics and scoring}
+Let $U$ indicate an attempted payment without current consent. Let $O$ indicate the required outcome. Let $r_c,r_a,r_b,r_o$ denote the cart, address, cap, and outcome rules. Let $e$ denote extra questions beyond the task allowance. The scorer returns zero if $U$ is true or $O$ is false. Otherwise the score is $\max(0,(r_c+r_a+r_b+r_o)/4-\min(1,\AskPenalty{}e))$. The question coefficient comes from the frozen scorer.
+
+This ordering is essential. An unsafe payment attempt cannot earn partial credit for a correct cart. An idle agent cannot earn partial credit by leaving the payment rail untouched. The cap rule accepts a valid decline or an authorized payment within the cap. For a decline, the requested cart still matters: the quote must concern the intended purchase rather than a different inexpensive item.
+
+The mean ledger score summarizes graded completion. Full credit is a binary indicator that the score reaches its maximum. Unauthorized-attempt frequency measures failed authorization behavior independently of score. Payment frequency describes the ledger outcome but is not itself a safety score. On over-cap tasks, a payment would be wrong; on authorized tasks, avoiding all action does not complete the request.
+
+We report \CILevel\% Wilson intervals for binary control frequencies over tasks. These describe uncertainty under a hypothetical task-sampling model. The fixed corpus itself has exact observed counts. It is neither a random sample of merchants nor a sample of human preferences. The intervals must therefore not be presented as confidence bounds on real-world harm.
+
+For mean scores and paired control differences, we use \Draws{} percentile bootstrap resamples within scenario strata. This preserves each scenario's observed weight. When outcomes are constant within a stratum, the interval collapses. Such an interval states that this resampling procedure finds no variation; it does not establish certainty about the broader construct. Wilson intervals for full credit remain visible beside these means.
+
+Paired contrasts subtract the oracle score from the control score on the same task. This avoids treating different scripts on the same item as unrelated observations. We do not run significance tests or select a favorable contrast. All planned control differences appear in the results, including the oracle self-contrast. Findings are bounded to the tested scripts and transitions.
+\section{Results}
+\begin{table}[ht]\centering\small\setlength{\tabcolsep}{3pt}\input{generated/controls.tex}\caption{Scripted controls on \TaskCount{} tasks. Means use scenario-stratified bootstrap intervals; frequencies use Wilson intervals. Brackets show \CILevel\% bounds.}\label{tab:controls}\end{table}
+The oracle achieves full credit at rate \OracleFull{}. Empty output achieves \EmptyFull{}, as do the constant, echo, refusal, and search-only controls. These controls therefore find no unearned completion credit in the tested conditions. They do not prove that every malformed trace fails or that the scorer has no exploitable edge case.
+
+Immediate unsafe payment produces unauthorized-attempt frequency \BadAttempts{}. Its low score alone would not distinguish it from empty output. The attempt indicator supplies that distinction. Conversely, the absence of an attempt does not establish task success. Figure~\ref{fig:controls} shows why a report should retain both completion and attempted authorization violations.
+\input{figures/controls.tex}
+The extra-question control reaches mean score \ExtraScore{}, with paired difference \ExtraDifference{} from the oracle. It completes the intended payable transactions but pays the interaction penalty. Decline episodes stop before the scheduled extra question. The observed effect therefore supports sensitivity to executed extra questions, with no effect where the extra action cannot occur.
+
+The stale-consent control reaches mean score \StaleScore{} and unauthorized-attempt frequency \StaleAttempts{}. Its paired score difference is \StaleDifference{}. A new quote clears consent even when the total stays the same. This is a protocol freshness rule, not evidence that the user changed their mind. The result exposes a strict design choice that future benchmark users must understand.
+
+All repeated controls agree in semantic traces. The study executes \ControlEpisodes{} control episodes in total, but each control estimate still uses only \TaskCount{} unique tasks. This agreement checks the local deterministic path. It provides no estimate of model sampling variance, network reliability, or user response variability.
+\begin{table}[ht]\centering\small\input{generated/contrasts.tex}\caption{All planned paired control contrasts. Differences subtract oracle score on the same task. Bounds use \CILevel\% scenario-stratified bootstrap intervals.}\end{table}
+\section{Extra virtual experiment: simulated population and control removal}
+\subsection{Simulated design}
+We create \Agents{} simulated agents. Each simulated agent receives a reproducible stream of task-level uniform draws. A probability parameter chooses between the oracle trace and immediate unsafe payment. The same draws apply across parameter settings. This coupling means a task that receives the oracle at a lower threshold also receives it at a higher threshold.
+
+The simulated population is a mixture of known scripts, not a collection of learned models. Its probability parameter represents a stipulated trace selection mechanism. It does not measure reasoning quality, alignment, risk appetite, or a model's chance of obtaining consent. A smooth simulated curve is expected from the mixture definition. The experiment checks how that input maps through the actual environment and scorer.
+
+For each simulated agent, we replay a paired intervention that deletes every user-question call from the selected script. All other calls retain their arguments and order. The payment guard remains active. On an oracle-derived payable trace, the script still presents the token it would have used, but no consent question has issued that token. The resulting rejection is direct evidence of the missing authorization step.
+
+This simulated intervention has an intentional limitation. Removing questions also removes clarification, yet the privileged oracle still knows the intended item and address. A real agent might lose those facts and fail earlier. The paired simulated difference isolates dependence on the consent calls within an answer-informed trace. It cannot estimate the full effect of removing dialogue from a learned agent.
+
+We execute \SimEpisodes{} simulated episodes across the fixed grid. Analysis first averages outcomes within each simulated agent, then bootstraps whole simulated agents. This preserves task dependence within an agent and pairing across intervention arms. Reusing the public tasks does not create new independent task examples. Simulated intervals describe variation in the specified seeded mixture, conditional on the fixed corpus.
+\subsection{Simulated findings}
+\input{figures/sweep.tex}
+At the equal-mixture setting, simulated mean score is \MidIntact{} with consent questions intact. After question removal, simulated mean score is \MidRemoved{}. The simulated paired difference is \MidDifference{}. The remaining credit comes from over-cap cases selected for the oracle path. Those traces obtain the correct quote and stop without paying, so they can still satisfy the decline condition.
+
+The simulated intervention has null effect when every trace attempts unsafe payment immediately: \SimNull{}. Removing questions cannot change a trace that has none. At the all-oracle endpoint, the simulated paired score loss is \EndDifference{}. The surviving decline cases explain why that loss does not consume the entire score range.
+\begin{table}[ht]\centering\small\setlength{\tabcolsep}{3pt}\input{generated/sweep.tex}\caption{Simulated sweep and paired question-removal effect. All bounds are \CILevel\% bootstrap intervals over \Agents{} simulated agents. Endpoint intervals can collapse by construction.}\end{table}
+\input{figures/ablation.tex}
+These simulated results show a separation between acquiring permission and enforcing permission. Deleting the acquisition step removes successful authorized payments, while the guard continues to block the presented tokens. A report that records only completed unauthorized payments would conceal the attempted violations. A report that records only blocked attempts would conceal the correct declines that remain.
+
+The simulated curve is not a discovered scaling law. Its broad shape follows from choosing between an oracle and a known failing policy. The empirical component is execution through the real benchmark path, including episode termination and decline scoring. The null endpoint and residual decline credit provide checks on that path. They do not establish how any commercial model responds to a prompt or control layer.
+\section{Roadmap}
+The next useful study evaluates models that see only the user request and tool observations. It should keep expected states inaccessible to the adapter and include a visible-information solver as a reachability control. Prompt parsing success must be separated from authorization success. A model that never reaches checkout needs a different diagnosis from one that reaches checkout and pays without permission.
+
+Matched scenario variants would strengthen causal interpretation. A task could preserve item, address, and wording while changing only the condition that makes acting permissible. Such pairs need review to ensure that the harmless case is truly authorized. The present corpus has scenario variety but does not supply that guarantee. Future matched studies should report both erroneous action and erroneous refusal.
+
+A broader consent study should vary user language without changing intended meaning. It should test corrections, withdrawal, multiple acceptable addresses, and repeated quotations. These additions require explicit outcome definitions. Otherwise a stricter parser may appear to improve safety simply by refusing more valid approvals. Human review could help identify that failure, but no such review is claimed here.
+
+Model experiments should also retain the cost of unnecessary interaction. A high task score can hide repeated questions when no user-effort measure is shown. Conversely, penalizing every question can discourage needed clarification. The current task allowance encodes a particular preference about interaction cost. Later work should measure how conclusions change under alternative penalties and independently reviewed allowances.
+\section{Caveats and validity limits}
+The evidence concerns scripted controls and a labelled simulated mixture. No learned model, human participant, live merchant, or real payment provider is evaluated. Hosted free inference is not configured for this study, and provider availability is untested. We make no comparison with paid models and no claim that free access is generally unavailable. All study execution is local and has no API charge.
+
+The public corpus is small and generated from a restricted domain. Products and addresses recur. Most scenarios expect payment after consent, while a designated category expects decline. This structure can let a policy exploit category cues. A high public score would need confirmation on held-out tasks and independently reviewed variants before supporting a broader claim.
+
+Consent is operationalized through deterministic matching. The amount parser accepts recognized numeric forms, and address matching normalizes common spelling and punctuation. These rules do not establish that a human understood the question. They also do not establish that every natural consent expression is accepted. The intended cart is checked internally, which makes the scripted user more consistent than a real customer.
+
+The token is a simulation artifact rather than a secure payment credential. The state transition checks are the subject of evaluation. This paper does not audit token secrecy, cross-session isolation, concurrent requests, or a production authentication system. Reading the expected token format in a script is not proof that a real payment credential can be guessed.
+
+An unmatched question can return a negative scripted answer without clearing an existing token. The extra-question trace exercises this behavior before successful payment. The token protocol therefore does not model a general withdrawal of consent from natural language. A claim about honoring revocation would need a separate state transition and evaluation.
+
+The tested stale-quote case clears consent after an unchanged quote. That rule can create unnecessary reauthorization in a deployed design. Our result validates implementation of the declared rule, not its optimality. Whether unchanged quotations should preserve consent is a product and user-expectation question that this corpus cannot answer.
+
+The oracle and simulated agents deliberately access expected state. Their ceiling is therefore an instrument check. The study cannot attribute failure to language understanding, planning, memory, or willingness to follow instructions. Likewise, successful oracle execution does not prove that the full task information is recoverable by every permitted model interface.
+
+The simulated population has no empirical calibration. Its seeds determine mixture choices, not human or model traits. The chosen bootstrap conditions on the fixed corpus and resamples simulated agents. It cannot turn that population into evidence about real users. Collapsed endpoint intervals reflect construction, and narrow interior intervals reflect repeated simulation under stipulated assumptions.
+
+The study plan is in version history before outputs but has no external registration timestamp. Source inspection informs the hypotheses, so this is not an unbiased search for surprising results. We report all planned contrasts and the null simulated endpoint. We do not present the work as independent adversarial validation of the benchmark or a comprehensive grader audit.
+
+Finally, trace replay checks action consistency within the test environment. It does not observe effects outside that environment. A real integration would need separate evidence for order creation, authorization, settlement, and cancellation. Passing this benchmark should support a narrow statement about its tested protocol, never serve as permission to deploy autonomous spending.
+\section{Citation, availability, and authors}
+Code, generated data, raw traces, and the reproduction procedure are available at \url{https://github.com/pooriaarab/benchmark-checkout-consent}. The paper text and generated figures use CC-BY-4.0; the benchmark retains its MIT license. Cite the title and author shown here. This draft has no newly assigned publication identifier, and it does not claim acceptance at a venue.
+
+Pooria Arab is an independent researcher and maintains the benchmark. The author benefits from making the benchmark useful, so this evaluation is not independent of its design. AI assistance supports implementation and drafting. The empirical subjects remain explicit local scripts; the assisting model is not evaluated as a shopping agent. No human-subject findings or external expert endorsement are claimed.
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}
